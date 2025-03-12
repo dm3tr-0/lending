@@ -3,7 +3,7 @@
 ## Описание проекта
 Веб-приложение мини-лендинг
 
-🌐 **Демо**: [https://.pythonanywhere.com/](https://dm3tr0lending.pythonanywhere.com/)
+🌐 **Демо**: [https://dm3tr0lending.pythonanywhere.com/](https://dm3tr0lending.pythonanywhere.com/)
 
 📋 **ТЗ**: [Паспорт проекта](https://github.com/user-attachments/files/19212442/-25391.pdf)
 
