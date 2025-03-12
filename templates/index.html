@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор шаблона</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Выберите шаблон</h1>
+    <div class="templates">
+        {% for template in templates %}
+        <div class="template">
+            <a href="{{ url_for('editor', template_name=template) }}">{{ template }}</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
