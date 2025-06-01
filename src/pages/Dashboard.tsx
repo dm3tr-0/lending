@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -11,14 +10,16 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, MoreVertical, Edit, Trash2, FileDown, ExternalLink, LogOut, Settings, User } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import { auth } from '@/lib/firebase';
+import { getUserLandings, deleteLanding } from '@/lib/api';
 
-// Mock data for landing pages
 interface LandingPage {
-  id: number;
+  id: string;
   name: string;
-  template: string;
-  lastEdited: string;
-  thumbnail: string;
+  created_at: string;
+  updated_at: string;
+  template_name?: string;
+  thumbnail_url?: string;
 }
 
 const Dashboard = () => {
@@ -27,38 +28,43 @@ const Dashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
   const [newPageName, setNewPageName] = useState('');
-  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check authentication
-    const auth = localStorage.getItem('isAuthenticated') === 'true';
-    if (!auth) {
-      navigate('/auth?mode=login');
-      return;
-    }
-    setIsAuthenticated(auth);
-
-    // Load mock landing pages
-    const mockPages: LandingPage[] = [
-      {
-        id: 1,
-        name: 'My Business Page',
-        template: 'Business',
-        lastEdited: '2 days ago',
-        thumbnail: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80'
-      },
-      {
-        id: 2,
-        name: 'Portfolio Site',
-        template: 'Portfolio',
-        lastEdited: 'Yesterday',
-        thumbnail: 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80'
+    const checkAuth = async () => {
+      const auth = localStorage.getItem('isAuthenticated') === 'true';
+      if (!auth) {
+        navigate('/auth?mode=login');
+        return;
       }
-    ];
-    
-    setLandingPages(mockPages);
+      setIsAuthenticated(auth);
+      await loadLandingPages();
+    };
+
+    checkAuth();
   }, [navigate]);
+
+  const loadLandingPages = async () => {
+    setIsLoading(true);
+    try {
+	const userId = localStorage.getItem('userId');
+      if (userId) {
+        const landings = await getUserLandings(userId);
+        setLandingPages(landings);
+      }
+    } catch (error) {
+      console.error('Failed to load landings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your landing pages",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
@@ -80,43 +86,34 @@ const Dashboard = () => {
       return;
     }
 
-    const newPage: LandingPage = {
-      id: landingPages.length + 1,
-      name: newPageName,
-      template: 'Blank',
-      lastEdited: 'Just now',
-      thumbnail: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=800&q=80'
-    };
-
-    setLandingPages([...landingPages, newPage]);
-    setNewPageName('');
     setIsDialogOpen(false);
-    
-    // Redirect to template selection
-    navigate('/templates');
-    
-    toast({
-      title: "Landing page created",
-      description: "Your new landing page has been created successfully.",
-    });
+    navigate('/templates', { state: { pageName: newPageName } });
+    setNewPageName('');
   };
 
-  const handleDeleteLandingPage = (id: number) => {
+  const handleDeleteLandingPage = async (id: string) => {
     setIsDeleting(id);
-    // Simulate API call
-    setTimeout(() => {
-      const updatedPages = landingPages.filter(page => page.id !== id);
-      setLandingPages(updatedPages);
-      setIsDeleting(null);
+    try {
+      await deleteLanding(id);
+      setLandingPages(landingPages.filter(page => page.id !== id));
       toast({
         title: "Landing page deleted",
         description: "Your landing page has been deleted successfully.",
       });
-    }, 600);
+    } catch (error) {
+      console.error('Failed to delete landing:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete landing page",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
   if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (
@@ -194,7 +191,11 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {landingPages.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading your landing pages...</p>
+          </div>
+        ) : landingPages.length === 0 ? (
           <Card className="text-center p-12">
             <div className="mx-auto max-w-md space-y-4">
               <h3 className="text-xl font-semibold">No landing pages yet</h3>
@@ -215,18 +216,24 @@ const Dashboard = () => {
             {landingPages.map((page) => (
               <Card key={page.id} className="overflow-hidden group">
                 <div className="h-40 overflow-hidden bg-muted">
-                  <img 
-                    src={page.thumbnail} 
-                    alt={page.name} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  {page.thumbnail_url ? (
+                    <img 
+                      src={page.thumbnail_url} 
+                      alt={page.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 border-2 border-dashed rounded-xl flex items-center justify-center">
+                      <span className="text-gray-500">No preview</span>
+                    </div>
+                  )}
                 </div>
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-xl">{page.name}</CardTitle>
                       <CardDescription>
-                        {page.template} • Edited {page.lastEdited}
+                        {page.template_name || 'Custom'} • Edited {new Date(page.updated_at).toLocaleDateString()}
                       </CardDescription>
                     </div>
                     <DropdownMenu>
@@ -236,7 +243,10 @@ const Dashboard = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(`/editor/${page.id}`)}>
+                        <DropdownMenuItem 
+                          className="cursor-pointer" 
+                          onClick={() => navigate(`/editor/${page.id}`)}
+                        >
                           <Edit className="mr-2 h-4 w-4" />
                           <span>Edit</span>
                         </DropdownMenuItem>
@@ -269,7 +279,6 @@ const Dashboard = () => {
                       variant="ghost" 
                       size="sm" 
                       className="text-xs"
-                      onClick={() => navigate(`/templates/${page.id}`)}
                     >
                       <ExternalLink className="mr-1 h-3 w-3" />
                       Preview
