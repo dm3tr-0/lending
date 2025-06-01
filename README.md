@@ -1,69 +1,89 @@
-# Welcome to your Lovable project
+# lending
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=22F739&width=435&lines=In+progres...;%D0%B4%D0%BE%D0%B4%D0%B5%D0%BB%D1%8B%D0%B2%D0%B0%D1%8E+%D1%80%D0%B5%D0%B4%D0%B0%D0%BA%D1%82%D0%BE%D1%80)](https://git.io/typing-svg)
 
-## Project info
+## Описание проекта
+Веб-приложение мини-лендинг
 
-**URL**: https://lovable.dev/projects/740d33c8-64b5-44f5-b11e-2a36089b3c01
+🌐 **Демо**: [пока не рабочкая ссылка]()
 
-## How can I edit this code?
+📋 **ТЗ**: [Паспорт проекта](https://github.com/user-attachments/files/19212442/-25391.pdf)
 
-There are several ways of editing your application.
+## 🚀 Возможности
+- Выбор шаблона сайта
+- Редактирование шаблона и экспорт в zip
+- Интуитивно понятный веб-интерфейс
 
-**Use Lovable**
+## 🛠 Установка
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/740d33c8-64b5-44f5-b11e-2a36089b3c01) and start prompting.
+### Клонирование репозитория
+```bash
+git clone https://github.com/dm3tr-0/lending.git
+cd lending
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+### Установка зависимостей
+```bash
+npm install
+```
 
-**Use your preferred IDE**
+### 🖥 Запуск сервера
+```bash
+node server.js
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 🖥 Запуск фронта
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Настройка бд
+```bash
+postgres:1234
+localhost:5432
+db: langing_constructor
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    firebase_uid TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-**Use GitHub Codespaces**
+CREATE TABLE templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    html_content TEXT NOT NULL,
+    thumbnail_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_active BOOLEAN DEFAULT TRUE
+);
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+CREATE TABLE landings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    template_id UUID REFERENCES templates(id) ON DELETE SET NULL,
+    name TEXT NOT NULL,
+    html_content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-## What technologies are used for this project?
+## 📂 Структура проекта
+```bash
+empty yet
+```
 
-This project is built with .
+## 🔑 Стек
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/740d33c8-64b5-44f5-b11e-2a36089b3c01) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- firebase
+- PostgreSQL
+- Express
