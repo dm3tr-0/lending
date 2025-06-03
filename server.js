@@ -43,6 +43,41 @@ app.get('/api/templates', async (req, res) => {
   }
 });
 
+
+// Получение лэндинга по ID
+app.get('/api/getlandings/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM landings WHERE id = $1',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Landing not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Ошибка при получении лэндинга:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+app.get('/api/gettemplate/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM templates WHERE id = $1',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching template:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 // Создание нового шаблона
 app.post('/api/templates', async (req, res) => {
   const { name, description, html_content, thumbnail_url } = req.body;

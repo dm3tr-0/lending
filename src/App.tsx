@@ -40,7 +40,8 @@ const App = () => (
         </AnimatePresence>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </QueryClientProvider>,
+  
 );
 
 export default App;

@@ -100,7 +100,7 @@ export const updateTemplate = async (templateId, isActive) => {
 };
 
 export const getLandingById = async (id) => {
-  const response = await fetch(`${API_URL}/landings/${id}`);
+  const response = await fetch(`${API_URL}/getlandings/${id}`);
   if (!response.ok) {
     throw new Error('Ошибка при получении лэндинга');
   }

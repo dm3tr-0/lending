@@ -9,6 +9,12 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  esbuild: {
+    jsxInject: `import React from 'react'`
+  },
+  define: {
+    'global': 'window', // Определяем global как window
+  },
   plugins: [
     react(),
     mode === 'development' &&

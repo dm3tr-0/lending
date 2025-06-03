@@ -91,17 +91,21 @@ const TemplateSelection = () => {
     }
 
     try {
-	const userId = localStorage.getItem('userId');
-      if (userId) {
-        const template = templates.find(t => t.id === selectedTemplate);
-        if (!template) throw new Error("Template not found");
-        
-        const landingId = await createLanding(
-          userId,
-          selectedTemplate,
-          pageName,
-          template.html_content || ''
-        );
+	 const userId = localStorage.getItem('userId');
+    if (userId) {
+      const template = templates.find(t => t.id === selectedTemplate);
+      if (!template) throw new Error("Template not found");
+      
+      // Получаем полные данные шаблона
+      const response = await fetch(`http://localhost:5000/api/gettemplate/${selectedTemplate}`);
+      const fullTemplate = await response.json();
+      
+      const landingId = await createLanding(
+        userId,
+        selectedTemplate,
+        pageName,
+        fullTemplate.html_content // Используем HTML из шаблона
+      );
         
         toast({
           title: "Template selected",
