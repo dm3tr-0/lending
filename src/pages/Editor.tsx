@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// Editor.tsx
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,9 +7,14 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, Download } from 'lucide-react';
 import { getLandingById, updateLanding } from '@/lib/api';
 import JSZip from 'jszip';
-import { Editor } from '@tinymce/tinymce-react';
+import grapesjs from 'grapesjs';
+import 'grapesjs/dist/css/grapes.min.css';
+import 'grapesjs-preset-webpage';
 
 const EditorComponent = () => {
+  const editorRef = useRef<any>(null);
+  const containerRef = useRef(null);
+  const [editorLoaded, setEditorLoaded] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,7 +29,7 @@ const EditorComponent = () => {
         if (id) {
           const landing = await getLandingById(id);
           if (landing) {
-            setHtmlContent(landing.html_content || ''); // Устанавливаем HTML-контент
+            setHtmlContent(landing.html_content || '');
             setPageName(landing.name);
           }
         }
@@ -41,12 +47,45 @@ const EditorComponent = () => {
     loadLanding();
   }, [id, navigate, toast]);
 
+  useEffect(() => {
+    if (htmlContent && !editorLoaded && containerRef.current) {
+      const editor = grapesjs.init({
+        container: containerRef.current,
+        fromElement: false,
+        height: '100vh',
+        width: 'auto',
+        plugins: ['gjs-preset-webpage'],
+        pluginsOpts: {
+          'gjs-preset-webpage': {}
+        },
+        storageManager: false,
+      });
+
+      editor.setComponents(htmlContent); // загрузка HTML из БД
+      editorRef.current = editor;
+      setEditorLoaded(true);
+    }
+  }, [htmlContent, editorLoaded]);
+
   const handleSave = async () => {
-    if (isSaving || !id) return;
-    
+    if (isSaving || !id || !editorRef.current) return;
+
     setIsSaving(true);
     try {
-      await updateLanding(id, htmlContent); // Сохраняем HTML-контент
+      const html = editorRef.current.getHtml();
+      const css = editorRef.current.getCss();
+      const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>${css}</style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`;
+
+      await updateLanding(id, fullHtml);
       toast({
         title: "Changes saved",
         description: "Your changes have been saved successfully.",
@@ -64,16 +103,28 @@ const EditorComponent = () => {
   };
 
   const performDownload = async () => {
+    if (!editorRef.current) return;
+
+    const html = editorRef.current.getHtml();
+    const css = editorRef.current.getCss();
+
+    const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>${css}</style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`;
+
     try {
       const zip = new JSZip();
-      zip.file("index.html", htmlContent); // Сохраняем HTML-контент в ZIP
-      
-      const cssContent = `body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }`;
-      zip.file("styles.css", cssContent);
-      
+      zip.file("index.html", fullHtml);
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
-      
+
       const a = document.createElement("a");
       a.href = url;
       a.download = `${pageName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.zip`;
@@ -81,13 +132,13 @@ const EditorComponent = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       toast({
         title: "Download complete",
         description: "Your landing page has been downloaded successfully.",
       });
     } catch (error) {
-      console.error('Failed to download:', error);
+      console.error('Download error:', error);
       toast({
         title: "Error",
         description: "Failed to download your landing page",
@@ -104,10 +155,7 @@ const EditorComponent = () => {
           Back to Dashboard
         </Button>
         <div className="flex items-center space-x-4">
-          <Button 
-            variant="outline" 
-            onClick={() => setIsDownloadDialogOpen(true)}
-          >
+          <Button variant="outline" onClick={() => setIsDownloadDialogOpen(true)}>
             <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
@@ -118,31 +166,8 @@ const EditorComponent = () => {
         </div>
       </div>
 
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Editing: {pageName}</h1>
-        <div className="border rounded-lg overflow-hidden mb-6">
-          <Editor
-            apiKey='l923grg0fimq6rrtahvgwdph0xscqg0d15nl2osbrl4zzb0y' // Вставьте ваш API ключ здесь
-            initialValue={htmlContent} // Устанавливаем начальное значение
-            init={{
-              height: 500,
-              menubar: false,
-              plugins: [
-                'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
-              ],
-              toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-              tinycomments_mode: 'embedded',
-              tinycomments_author: 'Author name',
-              mergetags_list: [
-                { value: 'First.Name', title: 'First Name' },
-                { value: 'Email', title: 'Email' },
-              ],
-              ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
-            }}
-            onEditorChange={(content, editor) => setHtmlContent(content)} // Обновляем htmlContent при изменении
-          />
-        </div>
+      <div className="h-[calc(100vh-70px)]">
+        <div ref={containerRef} />
       </div>
 
       <Dialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
