@@ -1,5 +1,5 @@
 # lending
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=22F739&width=435&lines=In+progress...;%D0%B4%D0%BE%D0%B4%D0%B5%D0%BB%D1%8B%D0%B2%D0%B0%D1%8E+%D1%80%D0%B5%D0%B4%D0%B0%D0%BA%D1%82%D0%BE%D1%80)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=71F70E&width=435&lines=%D1%83%D0%B6%D0%B5+%D0%BF%D0%BE%D1%87%D1%82%D0%B8)](https://git.io/typing-svg)
 
 ## Описание проекта
 Веб-приложение мини-лендинг
@@ -89,3 +89,4 @@ empty yet
 - firebase
 - PostgreSQL
 - Express
+- GrapeJS
